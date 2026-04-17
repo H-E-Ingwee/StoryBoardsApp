@@ -206,7 +206,7 @@ export function DashboardPage() {
         <div>
           <div className="font-heading font-black text-3xl text-[#032940]">Dashboard</div>
           <div className="text-[#555555] font-semibold mt-1">
-            A clean home for projects, versions, exports, and your studio workflow.
+            Your projects live here. Open one to turn your script into shots and images.
           </div>
         </div>
         <button

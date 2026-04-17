@@ -498,12 +498,12 @@ export function EditorPage() {
         <aside className="border-r border-[#E0E0E0] bg-white p-6 flex flex-col gap-6">
           <div>
             <div className="font-heading font-black text-[#032940] text-lg flex items-center gap-2 mb-3">
-              <PenTool size={18} className="text-[#730E20]" /> Script / Treatment
+              <PenTool size={18} className="text-[#730E20]" /> Your script
             </div>
             <textarea
               value={project.script}
               onChange={(e) => updateProject({ script: e.target.value })}
-              placeholder="Paste your script here to auto-generate shots…"
+              placeholder="Paste your script here. StoryAI will turn it into shots."
               className="w-full h-44 p-4 text-sm font-semibold bg-[#F0F0F0] border border-[#E0E0E0] rounded-2xl focus:ring-2 focus:ring-[#032940] focus:border-[#032940] outline-none resize-none transition-all"
             />
             <button
@@ -513,14 +513,14 @@ export function EditorPage() {
               type="button"
             >
               {isParsing ? <Loader2 size={18} className="animate-spin" /> : <Wand2 size={18} />}
-              Auto-Parse into Shots
+              Break into shots
             </button>
           </div>
 
           <div className="border-t border-[#E0E0E0] pt-6">
-            <div className="font-heading font-black text-[#032940] text-lg mb-4">Global Direction</div>
+            <div className="font-heading font-black text-[#032940] text-lg mb-4">Style & consistency</div>
             <label className="block text-xs font-black text-[#555555] uppercase tracking-widest mb-2">
-              Visual Aesthetic
+              Look & feel
             </label>
             <select
               value={project.styleId}
@@ -535,7 +535,7 @@ export function EditorPage() {
             </select>
 
             <label className="block text-xs font-black text-[#555555] uppercase tracking-widest mb-2">
-              Consistency Reference
+              Character notes (keep the look consistent)
             </label>
             <textarea
               value={project.characterRef}
@@ -544,7 +544,7 @@ export function EditorPage() {
               className="w-full h-32 p-4 text-sm font-semibold bg-[#F0F0F0] border border-[#E0E0E0] rounded-2xl focus:ring-2 focus:ring-[#032940] outline-none resize-none transition-all"
             />
             <div className="text-xs text-[#730E20] font-semibold mt-2 bg-[#730E20]/5 p-3 rounded-xl border border-[#730E20]/10">
-              This reference is appended to every generation to keep characters consistent.
+              Tip: add clothing, age, and key features here so images stay consistent.
             </div>
 
             <div className="mt-6">
@@ -650,11 +650,11 @@ export function EditorPage() {
                 return (
                   <div
                     key={panel.id}
-                    className={`bg-white rounded-2xl shadow-sm border transition-all overflow-hidden group ${
+                    className={`bg-white rounded-2xl shadow-sm border transition-all overflow-hidden group flex flex-col ${
                       activePanelId === panel.id ? 'border-[#F27D16] shadow-lg' : 'border-[#E0E0E0] hover:border-[#F27D16] hover:shadow-md'
                     }`}
                   >
-                    <div className="aspect-video w-full bg-[#F0F0F0] relative flex items-center justify-center overflow-hidden border-b border-[#E0E0E0]">
+                    <div className="aspect-video w-full bg-[#F0F0F0] relative flex items-center justify-center overflow-hidden border-b border-[#E0E0E0] shrink-0">
                       {panel.isGenerating ? (
                         <div className="flex flex-col items-center text-[#032940]">
                           <Loader2 className="w-10 h-10 animate-spin mb-3 text-[#F27D16]" />
@@ -712,18 +712,18 @@ export function EditorPage() {
 
                     <button
                       onClick={() => setActivePanelId(panel.id)}
-                      className="w-full text-left p-5"
+                      className="w-full text-left p-5 flex-1"
                       type="button"
                     >
                       <div className="text-[10px] font-black text-[#555555] uppercase tracking-widest mb-2">
-                        Caption / Action
+                        What happens
                       </div>
                       <div className="text-sm font-semibold text-[#333333] leading-relaxed line-clamp-3">
                         {panel.caption}
                       </div>
                     </button>
 
-                    <div className="px-5 pb-5">
+                    <div className="px-5 pb-5 mt-auto">
                       <button
                         onClick={() => generateImageForPanel(panel.id)}
                         disabled={panel.isGenerating || !panel.prompt}
@@ -739,7 +739,7 @@ export function EditorPage() {
                         ) : (
                           <ImageIcon size={18} />
                         )}
-                        {displayImage ? 'Regenerate (new take)' : 'Generate Image'}
+                        {displayImage ? 'Try another look' : 'Make an image'}
                       </button>
                     </div>
                   </div>
