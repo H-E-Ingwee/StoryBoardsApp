@@ -30,16 +30,44 @@ def _get_client() -> InferenceClient:
     return InferenceClient(provider="auto", api_key=_get_hf_api_key())
 
 app = Flask(__name__)
-CORS(app, resources={r"/api/*": {"origins": "http://localhost:5173"}})
+
+# Configure CORS for both development and production
+allowed_origins = [
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "http://localhost:5000",
+    "https://storyai-app.vercel.app",  # Production frontend
+    "https://*.vercel.app",  # Any Vercel deployment
+]
+
+# Add custom origin from environment variable if provided
+env_origin = os.getenv('FRONTEND_URL', '')
+if env_origin:
+    allowed_origins.append(env_origin)
+
+CORS(app, 
+     resources={r"/api/*": {
+         "origins": allowed_origins,
+         "methods": ["GET", "POST", "OPTIONS"],
+         "allow_headers": ["Content-Type", "Authorization"],
+         "supports_credentials": True
+     }},
+     supports_credentials=True
+)
 
 # NOTE: We use huggingface_hub.InferenceClient which handles provider routing + formats.
 
-@app.route('/api/health', methods=['GET'])
+@app.route('/api/health', methods=['GET', 'OPTIONS'])
 def health_check():
+    if request.method == 'OPTIONS':
+        return '', 204
     return jsonify({"status": "success", "message": "StoryAI Python Backend is running on Hugging Face!"}), 200
 
-@app.route('/api/parse-script', methods=['POST'])
+@app.route('/api/parse-script', methods=['POST', 'OPTIONS'])
 def parse_script():
+    if request.method == 'OPTIONS':
+        return '', 204
+        
     data = request.get_json(force=True, silent=True) or {}
     script_text = data.get('script', '')
 
@@ -104,8 +132,11 @@ Limit to 3 to 6 logical storyboard scenes.
         }), 502
 
 # --- Image Generation Endpoint ---
-@app.route('/api/generate-image', methods=['POST'])
+@app.route('/api/generate-image', methods=['POST', 'OPTIONS'])
 def generate_image():
+    if request.method == 'OPTIONS':
+        return '', 204
+        
     data = request.get_json(force=True, silent=True) or {}
     prompt = data.get('prompt', '')
 
@@ -146,4 +177,6 @@ def generate_image():
         }), 502
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    port = int(os.getenv('PORT', 5000))
+    debug = os.getenv('FLASK_ENV', 'production') == 'development'
+    app.run(host='0.0.0.0', port=port, debug=debug)
