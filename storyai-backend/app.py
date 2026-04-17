@@ -55,6 +55,29 @@ def _get_text_model_candidates() -> list[str]:
     
     return candidates if candidates else ["gpt2"]  # Ensure we always have at least gpt2
 
+def _get_image_model_candidates() -> list[str]:
+    _, primary_image_model = _get_hf_models()
+    fallback_models = [
+        primary_image_model,                          # User-configured first
+        "black-forest-labs/FLUX.1-schnell",          # Preferred default
+        "stabilityai/stable-diffusion-2-1",          # Common fallback
+    ]
+    candidates: list[str] = []
+    for model in fallback_models:
+        if model and model not in candidates and "=" not in model:
+            candidates.append(model)
+    return candidates if candidates else ["black-forest-labs/FLUX.1-schnell"]
+
+def _get_client() -> InferenceClient:
+    # Use provider auto-routing for maximum compatibility
+    # Falls back to basic initialization if provider parameter not supported
+    api_key = _get_hf_api_key()
+    try:
+        return InferenceClient(provider="auto", api_key=api_key)
+    except TypeError:
+        # Older versions don't support provider parameter
+        return InferenceClient(api_key=api_key)
+
 def parse_screenplay_simple(script_text: str) -> dict:
     """
     Fallback parser: simple screenplay format parser that doesn't require LLM.
@@ -107,19 +130,7 @@ def parse_screenplay_simple(script_text: str) -> dict:
         for char in sorted(list(characters))[:5]  # Limit to 5 characters
     ]
     
-    return {
-        "characters": character_list,
-        "scenes": scenes
-    }
-
-    # Use provider auto-routing for maximum compatibility
-    # Falls back to basic initialization if provider parameter not supported
-    api_key = _get_hf_api_key()
-    try:
-        return InferenceClient(provider="auto", api_key=api_key)
-    except TypeError:
-        # Older versions don't support provider parameter
-        return InferenceClient(api_key=api_key)
+    return {"characters": character_list, "scenes": scenes}
 
 app = Flask(__name__)
 
@@ -279,12 +290,27 @@ def generate_image():
 
     try:
         _, image_model = _get_hf_models()
+        image_candidates = _get_image_model_candidates()
         client = _get_client()
 
-        image = client.text_to_image(
-            prompt=prompt,
-            model=image_model,
-        )
+        image = None
+        last_error = None
+        model_used = image_model
+        for candidate_model in image_candidates:
+            try:
+                image = client.text_to_image(
+                    prompt=prompt,
+                    model=candidate_model,
+                )
+                model_used = candidate_model
+                break
+            except Exception as model_err:
+                last_error = model_err
+                print(f"Image model failed ({candidate_model}): {model_err}", flush=True)
+                continue
+
+        if image is None:
+            raise RuntimeError(f"All image model attempts failed: {last_error}")
 
         buf = io.BytesIO()
         image.save(buf, format="PNG")
@@ -293,6 +319,7 @@ def generate_image():
 
         return jsonify({
             "status": "success", 
+            "model": model_used,
             "image_base64": base64_encoded
         }), 200
 
