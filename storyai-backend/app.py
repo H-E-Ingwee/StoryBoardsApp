@@ -27,10 +27,18 @@ def _get_hf_api_key() -> str:
 def _get_hf_models() -> tuple[str, str]:
     # Allow swapping models without code changes.
     load_dotenv(override=True)
-    # Defaults chosen because they work reliably on Hugging Face free tier with text_generation API
-    # FLAN-T5 is excellent for instruction following and JSON generation
-    text_model = os.environ.get("HF_TEXT_MODEL", "google/flan-t5-large").strip().strip('"').strip("'")
-    image_model = os.environ.get("HF_IMAGE_MODEL", "black-forest-labs/FLUX.1-schnell").strip().strip('"').strip("'")
+    
+    # Clean and validate environment variables
+    def clean_model_var(raw: str, default: str) -> str:
+        raw = raw.strip().strip('"').strip("'")
+        # Reject malformed env var strings (containing "=") or empty strings
+        if not raw or "=" in raw:
+            return default
+        return raw
+    
+    # Defaults chosen because they work reliably on Hugging Face free tier
+    text_model = clean_model_var(os.environ.get("HF_TEXT_MODEL", ""), "gpt2")
+    image_model = clean_model_var(os.environ.get("HF_IMAGE_MODEL", ""), "black-forest-labs/FLUX.1-schnell")
     return text_model, image_model
 
 def _get_text_model_candidates() -> list[str]:
@@ -57,10 +65,12 @@ def _get_text_model_candidates() -> list[str]:
 
 def _get_image_model_candidates() -> list[str]:
     _, primary_image_model = _get_hf_models()
+    # Image models ranked by reliability on Hugging Face free tier
     fallback_models = [
-        primary_image_model,                          # User-configured first
-        "black-forest-labs/FLUX.1-schnell",          # Preferred default
-        "stabilityai/stable-diffusion-2-1",          # Common fallback
+        primary_image_model,                          # User-configured first (if valid)
+        "black-forest-labs/FLUX.1-schnell",          # Latest, very reliable
+        "runwayml/stable-diffusion-v1-5",            # Classic, always available
+        "stabilityai/stable-diffusion-2-1",          # Alternative if v1.5 fails
     ]
     candidates: list[str] = []
     for model in fallback_models:
@@ -324,13 +334,27 @@ def generate_image():
         }), 200
 
     except Exception as e:
-        print("Error generating image:", e)
+        error_msg = str(e).lower()
+        print("Error generating image:", e, flush=True)
+        
+        # Provide specific error messages for common issues
+        if "rate" in error_msg or "quota" in error_msg:
+            hint = "Rate limit reached. Wait a moment and try again."
+        elif "404" in error_msg or "not found" in error_msg:
+            hint = "Model not found on Hugging Face. Check HF_IMAGE_MODEL environment variable."
+        elif "unauthorized" in error_msg or "401" in error_msg:
+            hint = "Invalid Hugging Face API key. Check HUGGINGFACE_API_KEY in Render dashboard."
+        elif "model loading" in error_msg or "timeout" in error_msg:
+            hint = "Model is loading. This typically takes 30-60 seconds on first use. Try again."
+        else:
+            hint = "Check Render logs for details. Ensure HF_API_KEY is set in Render environment."
+        
         _, image_model = _get_hf_models()
         return jsonify({
             "error": "Hugging Face Image API Error",
             "model": image_model,
             "details": str(e),
-            "hint": "If this says the model is not supported, set HF_IMAGE_MODEL in storyai-backend/.env"
+            "hint": hint
         }), 502
 
 if __name__ == '__main__':
