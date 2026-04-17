@@ -33,8 +33,14 @@ def _get_hf_models() -> tuple[str, str]:
     return text_model, image_model
 
 def _get_client() -> InferenceClient:
-    # Use provider auto-routing for maximum compatibility.
-    return InferenceClient(provider="auto", api_key=_get_hf_api_key())
+    # Use provider auto-routing for maximum compatibility
+    # Falls back to basic initialization if provider parameter not supported
+    api_key = _get_hf_api_key()
+    try:
+        return InferenceClient(provider="auto", api_key=api_key)
+    except TypeError:
+        # Older versions don't support provider parameter
+        return InferenceClient(api_key=api_key)
 
 app = Flask(__name__)
 
