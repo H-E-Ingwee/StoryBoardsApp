@@ -14,7 +14,9 @@ load_dotenv(override=False)
 def _get_hf_api_key() -> str:
     # For production (Render), environment variables are set directly
     # For development, they come from .env file
-    raw = os.environ.get("HUGGINGFACE_API_KEY", "").strip()
+    # Check both HUGGINGFACE_API_KEY and HF_API_KEY for compatibility
+    raw = os.environ.get("HUGGINGFACE_API_KEY", "") or os.environ.get("HF_API_KEY", "")
+    raw = raw.strip()
     # Handle quoted values
     if raw.startswith('"') and raw.endswith('"'):
         raw = raw[1:-1]
