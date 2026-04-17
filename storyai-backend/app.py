@@ -82,6 +82,13 @@ def _get_client() -> InferenceClient:
     # Use provider auto-routing for maximum compatibility
     # Falls back to basic initialization if provider parameter not supported
     api_key = _get_hf_api_key()
+    
+    # Debug: Log if API key is missing
+    if not api_key:
+        print("WARNING: No Hugging Face API key found! Check HUGGINGFACE_API_KEY or HF_API_KEY in Render environment.", flush=True)
+    else:
+        print(f"INFO: Using Hugging Face API key (first 10 chars: {api_key[:10]}...)", flush=True)
+    
     try:
         return InferenceClient(provider="auto", api_key=api_key)
     except TypeError:
