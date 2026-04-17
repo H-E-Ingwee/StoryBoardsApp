@@ -344,8 +344,13 @@ function Editor({ user, project, onClose }) {
       });
 
       if (!response.ok) {
-        const errData = await response.json();
-        throw new Error(errData.error || "Failed to parse script on backend.");
+        const errData = await response.json().catch(() => ({}));
+        const msg =
+          errData.error ||
+          errData.details ||
+          (typeof errData === 'string' ? errData : null) ||
+          "Failed to parse script on backend.";
+        throw new Error(msg);
       }
 
       const data = await response.json();
