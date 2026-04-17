@@ -8,14 +8,19 @@ from dotenv import load_dotenv
 from huggingface_hub import InferenceClient
 import io
 
-# Load environment variables
-load_dotenv()
+# Load environment variables from .env file (if it exists - ignored in production)
+load_dotenv(override=False)
 
 def _get_hf_api_key() -> str:
-    # Reload .env on each request (cheap + avoids confusing "I changed .env but it didn't work")
-    load_dotenv(override=True)
-    raw = os.environ.get("HUGGINGFACE_API_KEY", "")
-    return raw.strip().strip('"').strip("'")
+    # For production (Render), environment variables are set directly
+    # For development, they come from .env file
+    raw = os.environ.get("HUGGINGFACE_API_KEY", "").strip()
+    # Handle quoted values
+    if raw.startswith('"') and raw.endswith('"'):
+        raw = raw[1:-1]
+    if raw.startswith("'") and raw.endswith("'"):
+        raw = raw[1:-1]
+    return raw
 
 def _get_hf_models() -> tuple[str, str]:
     # Allow swapping models without code changes.
@@ -66,7 +71,13 @@ CORS(app,
 def health_check():
     if request.method == 'OPTIONS':
         return '', 204
-    return jsonify({"status": "success", "message": "StoryAI Python Backend is running on Hugging Face!"}), 200
+    hf_key = _get_hf_api_key()
+    has_key = bool(hf_key)
+    return jsonify({
+        "status": "success", 
+        "message": "StoryAI Python Backend is running on Hugging Face!",
+        "api_key_configured": has_key
+    }), 200
 
 @app.route('/api/parse-script', methods=['POST', 'OPTIONS'])
 def parse_script():
@@ -78,7 +89,9 @@ def parse_script():
 
     hf_api_key = _get_hf_api_key()
     if not hf_api_key:
-        return jsonify({"error": "Backend Error: HUGGINGFACE_API_KEY is missing from your .env file!"}), 400
+        error_msg = "HUGGINGFACE_API_KEY environment variable is not set. Set it in Render dashboard (Settings > Environment Variables)."
+        print(f"ERROR: {error_msg}", flush=True)
+        return jsonify({"error": f"Backend Error: {error_msg}"}), 400
         
     if not script_text:
         return jsonify({"error": "Backend Error: No script text was received from the frontend!"}), 400
@@ -147,7 +160,9 @@ def generate_image():
 
     hf_api_key = _get_hf_api_key()
     if not hf_api_key:
-        return jsonify({"error": "Backend Error: HUGGINGFACE_API_KEY is missing from your .env file!"}), 400
+        error_msg = "HUGGINGFACE_API_KEY environment variable is not set. Set it in Render dashboard (Settings > Environment Variables)."
+        print(f"ERROR: {error_msg}", flush=True)
+        return jsonify({"error": f"Backend Error: {error_msg}"}), 400
         
     if not prompt:
         return jsonify({"error": "Backend Error: No image prompt was received from the frontend!"}), 400
