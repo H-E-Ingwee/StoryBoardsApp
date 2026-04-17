@@ -27,8 +27,9 @@ def _get_hf_api_key() -> str:
 def _get_hf_models() -> tuple[str, str]:
     # Allow swapping models without code changes.
     load_dotenv(override=True)
-    # Defaults chosen because they're commonly available via Inference Providers routing.
-    text_model = os.environ.get("HF_TEXT_MODEL", "MiniMaxAI/MiniMax-M2.7").strip().strip('"').strip("'")
+    # Defaults chosen because they work reliably on Hugging Face free tier with text_generation API
+    # FLAN-T5 is excellent for instruction following and JSON generation
+    text_model = os.environ.get("HF_TEXT_MODEL", "google/flan-t5-large").strip().strip('"').strip("'")
     image_model = os.environ.get("HF_IMAGE_MODEL", "black-forest-labs/FLUX.1-schnell").strip().strip('"').strip("'")
     return text_model, image_model
 
@@ -108,37 +109,34 @@ def parse_script():
         text_model, _ = _get_hf_models()
         client = _get_client()
 
-        system = (
-            "You are an expert storyboard director and script analyzer. "
-            "You must return ONLY valid JSON and no other text."
-        )
-        user = f"""
-Analyze the following script and extract the key visual information.
+        prompt = f"""Analyze the following screenplay and extract visual information for storyboarding.
 
 Script:
 {script_text}
 
-You must return ONLY a raw JSON object with this exact structure:
+Return ONLY valid JSON (no other text):
 {{
-  "characters": [{{"name": "Character's name", "visual_description": "Physical traits, clothing, age, etc."}}],
-  "scenes": [{{"caption": "1-2 sentence action description.", "imagePrompt": "Highly detailed visual prompt."}}]
+  "characters": [{{"name": "Name", "visual_description": "Physical traits"}}],
+  "scenes": [{{"caption": "1-2 sentence action", "imagePrompt": "Detailed visual description"}}]
 }}
-Limit to 3 to 6 logical storyboard scenes.
-""".strip()
+Limit to 3-6 scenes. Output ONLY JSON."""
 
-        completion = client.chat.completions.create(
+        # Use text_generation instead of chat completions (more reliable on free tier)
+        generated_text = client.text_generation(
+            prompt=prompt,
             model=text_model,
-            messages=[
-                {"role": "system", "content": system},
-                {"role": "user", "content": user},
-            ],
-            temperature=0.2,
+            max_new_tokens=2000,
+            temperature=0.3,
         )
-
-        generated_text = (completion.choices[0].message.content or "").strip()
         
-        # Robustly extract ONLY the JSON part, stripping away any conversational text
-        clean_text = generated_text.strip()
+        # Extract the text (might be a string or object depending on client version)
+        if isinstance(generated_text, dict):
+            text_output = generated_text.get('generated_text', str(generated_text))
+        else:
+            text_output = str(generated_text)
+        
+        # Robustly extract ONLY the JSON part
+        clean_text = text_output.strip()
         json_match = re.search(r'\{.*\}', clean_text, re.DOTALL)
         if json_match:
             clean_text = json_match.group(0)
@@ -148,13 +146,13 @@ Limit to 3 to 6 logical storyboard scenes.
         return jsonify({"status": "success", "data": result_data}), 200
 
     except Exception as e:
-        print("Error parsing script:", e)
+        print("Error parsing script:", e, flush=True)
         text_model, _ = _get_hf_models()
         return jsonify({
             "error": "Hugging Face Text API Error",
             "model": text_model,
             "details": str(e),
-            "hint": "If this says the model is not supported, set HF_TEXT_MODEL in storyai-backend/.env"
+            "hint": "Try a different model or check Hugging Face API status"
         }), 502
 
 # --- Image Generation Endpoint ---
