@@ -17,11 +17,13 @@ function FeatureCard({ icon, title, description }) {
 
 function PricingCard({ tier, price, description, features, featured = false }) {
   return (
-    <div className={`relative rounded-3xl p-8 border-2 flex flex-col transition-all duration-300 ${
-      featured 
-        ? 'bg-[#032940] border-[#032940] text-white shadow-2xl scale-105 z-10' 
-        : 'bg-white border-[#E0E0E0] text-[#032940] hover:border-[#F27D16] hover:shadow-lg'
-    }`}>
+    <div
+      className={`relative rounded-3xl p-8 border-2 flex flex-col transition-all duration-300 ${
+        featured
+          ? 'bg-[#032940] border-[#032940] text-white shadow-2xl scale-105 z-10'
+          : 'bg-white border-[#E0E0E0] text-[#032940] hover:border-[#F27D16] hover:shadow-lg'
+      }`}
+    >
       {featured && (
         <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 bg-[#F27D16] text-[#032940] rounded-full text-xs font-black uppercase tracking-wider shadow-lg">
           Most Popular
@@ -86,7 +88,7 @@ export function LandingPage() {
 
           {/* Desktop Navigation */}
           <div className="hidden lg:flex items-center gap-8">
-            <nav className="flex gap-8 text-sm font-bold text-[#666666]">
+            <nav className="flex gap-8 text-sm font-bold text-[#666666]">       
               <a href="#features" className="hover:text-[#F27D16] transition-colors">Features</a>
               <a href="#how" className="hover:text-[#F27D16] transition-colors">How It Works</a>
               <a href="#pricing" className="hover:text-[#F27D16] transition-colors">Pricing</a>
@@ -115,7 +117,7 @@ export function LandingPage() {
 
         {/* Mobile Navigation */}
         {isMenuOpen && (
-          <div className="lg:hidden bg-white border-t border-[#E0E0E0] p-5">
+          <div className="lg:hidden bg-white border-t border-[#E0E0E0] p-5">    
             <nav className="flex flex-col gap-4 mb-4">
               <a href="#features" className="text-sm font-bold text-[#666666] hover:text-[#F27D16]">Features</a>
               <a href="#how" className="text-sm font-bold text-[#666666] hover:text-[#F27D16]">How It Works</a>
@@ -129,86 +131,242 @@ export function LandingPage() {
         )}
       </header>
 
-      <main className="max-w-7xl mx-auto px-5 py-14">
-        <section className="grid grid-cols-1 lg:grid-cols-[1.2fr_0.8fr] gap-10 items-center">
-          <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-[#E0E0E0] text-xs font-black text-[#032940] tracking-widest uppercase">
-              <Sparkles size={14} className="text-[#F27D16]" />
-              Storyboards, faster
+      <main className="pt-20">
+        {/* Hero Section */}
+        <section className="max-w-7xl mx-auto px-5 py-20">
+          <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_0.8fr] gap-10 items-center">
+            <div>
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-[#E0E0E0] text-xs font-black text-[#032940] tracking-widest uppercase">
+                <Sparkles size={14} className="text-[#F27D16]" />
+                AI-Powered Storyboards
+              </div>
+              <h1 className="mt-8 font-heading font-black text-5xl lg:text-6xl text-[#032940] leading-tight">
+                Create Professional Storyboards in Minutes
+              </h1>
+              <p className="mt-6 text-[#555555] font-semibold text-lg leading-relaxed max-w-2xl">
+                Transform your scripts into stunning visual storyboards with AI-powered automation. Keep creative control with every shot.
+              </p>
+              <div className="mt-8 flex flex-col sm:flex-row gap-4">
+                <Link
+                  to="/login"
+                  className="px-6 py-4 rounded-2xl text-base font-black text-white bg-[#F27D16] hover:bg-[#d86b10] transition-colors inline-flex items-center justify-center gap-2 shadow-lg shadow-[#F27D16]/30"
+                >
+                  Start Creating <ArrowRight size={18} />
+                </Link>
+                <a
+                  href="#how"
+                  className="px-6 py-4 rounded-2xl text-base font-black text-[#032940] bg-white border-2 border-[#E0E0E0] hover:border-[#F27D16] transition-colors inline-flex items-center justify-center"
+                >
+                  See How It Works
+                </a>
+              </div>
             </div>
-            <h1 className="mt-5 font-heading font-black text-4xl sm:text-5xl text-[#032940] leading-tight">
-              Turn scripts into professional storyboards with AI—without losing creative control.
-            </h1>
-            <p className="mt-4 text-[#555555] font-semibold text-lg leading-relaxed max-w-2xl">
-              Paste a script, auto-parse into shots, generate frames, and refine each shot with cinema
-              parameters, notes, and takes—like a real production workflow.
-            </p>
 
-            <div className="mt-7 flex flex-col sm:flex-row gap-3">
+            <div className="bg-gradient-to-br from-[#F27D16]/5 to-[#032940]/5 border border-[#E0E0E0] rounded-3xl p-8 shadow-lg">
+              <div className="font-heading font-black text-[#032940] text-xl mb-6">Studio Preview</div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="aspect-video rounded-2xl bg-[#F0F0F0] border border-[#E0E0E0] flex items-center justify-center">
+                  <PlayCircle size={40} className="text-[#F27D16]/30" />
+                </div>
+                <div className="aspect-video rounded-2xl bg-[#F0F0F0] border border-[#E0E0E0] flex items-center justify-center">
+                  <PlayCircle size={40} className="text-[#F27D16]/30" />
+                </div>
+                <div className="aspect-video rounded-2xl bg-[#F0F0F0] border border-[#E0E0E0] flex items-center justify-center">
+                  <PlayCircle size={40} className="text-[#F27D16]/30" />
+                </div>
+                <div className="aspect-video rounded-2xl bg-[#F0F0F0] border border-[#E0E0E0] flex items-center justify-center">
+                  <PlayCircle size={40} className="text-[#F27D16]/30" />
+                </div>
+              </div>
+              <div className="mt-6 text-sm text-[#555555] font-semibold leading-relaxed">
+                Upload your script, auto-parse shots, and generate beautiful frames with AI.
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Features Section */}
+        <section id="features" className="max-w-7xl mx-auto px-5 py-20">
+          <div className="text-center mb-16">
+            <h2 className="font-heading font-black text-4xl text-[#032940] mb-4">Powerful Features for Creators</h2>
+            <p className="text-[#666666] font-semibold text-lg max-w-2xl mx-auto">Everything you need to create professional storyboards with AI assistance</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <FeatureCard 
+              icon={Wand2} 
+              title="Script to Shots" 
+              description="Automatically parse scripts into storyboard-ready shots with intelligent shot detection." 
+            />
+            <FeatureCard 
+              icon={Film} 
+              title="Cinema Controls" 
+              description="Fine-tune every shot with lens, angle, lighting presets, and detailed production notes." 
+            />
+            <FeatureCard 
+              icon={Sparkles} 
+              title="AI Generation" 
+              description="Generate stunning frames per shot with batch processing and unlimited retries." 
+            />
+            <FeatureCard 
+              icon={ShieldCheck} 
+              title="Team Ready" 
+              description="Creator profiles, project management, and admin controls for seamless collaboration." 
+            />
+          </div>
+        </section>
+
+        {/* How It Works Section */}
+        <section id="how" className="max-w-7xl mx-auto px-5 py-20 bg-[#F9F9F9] -mx-5 px-[calc(1.25rem)] lg:-mx-0 lg:px-5 rounded-none lg:rounded-3xl">
+          <div className="text-center mb-16">
+            <h2 className="font-heading font-black text-4xl text-[#032940] mb-4">How It Works</h2>
+            <p className="text-[#666666] font-semibold text-lg max-w-2xl mx-auto">Three simple steps to create your first storyboard</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="bg-white rounded-2xl p-8 border border-[#E0E0E0] shadow-sm hover:shadow-lg transition-all">
+              <div className="w-12 h-12 rounded-full bg-[#F27D16] text-white flex items-center justify-center font-heading font-black text-xl mb-6">
+                1
+              </div>
+              <h3 className="font-heading font-black text-xl text-[#032940] mb-3">Upload Your Script</h3>
+              <p className="text-[#666666] font-semibold leading-relaxed">
+                Paste your screenplay or script. Our AI automatically detects scenes, shots, and action.
+              </p>
+            </div>
+            <div className="bg-white rounded-2xl p-8 border border-[#E0E0E0] shadow-sm hover:shadow-lg transition-all">
+              <div className="w-12 h-12 rounded-full bg-[#F27D16] text-white flex items-center justify-center font-heading font-black text-xl mb-6">
+                2
+              </div>
+              <h3 className="font-heading font-black text-xl text-[#032940] mb-3">Customize Shots</h3>
+              <p className="text-[#666666] font-semibold leading-relaxed">
+                Edit shot descriptions, add cinematography details, adjust timing, and add production notes.
+              </p>
+            </div>
+            <div className="bg-white rounded-2xl p-8 border border-[#E0E0E0] shadow-sm hover:shadow-lg transition-all">
+              <div className="w-12 h-12 rounded-full bg-[#F27D16] text-white flex items-center justify-center font-heading font-black text-xl mb-6">
+                3
+              </div>
+              <h3 className="font-heading font-black text-xl text-[#032940] mb-3">Generate & Share</h3>
+              <p className="text-[#666666] font-semibold leading-relaxed">
+                Generate frames with AI, select your favorite takes, and share polished storyboards with your team.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* Pricing Section */}
+        <section id="pricing" className="max-w-7xl mx-auto px-5 py-20">
+          <div className="text-center mb-16">
+            <h2 className="font-heading font-black text-4xl text-[#032940] mb-4">Simple, Transparent Pricing</h2>
+            <p className="text-[#666666] font-semibold text-lg max-w-2xl mx-auto">Choose the perfect plan for your creative needs</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-end">
+            <PricingCard
+              tier="Starter"
+              price="Free"
+              description="Perfect to get started"
+              features={[
+                "5 projects per month",
+                "Up to 50 shots per project",
+                "Basic AI image generation",
+                "Standard support",
+                "Export to PDF"
+              ]}
+            />
+            <PricingCard
+              tier="Creator"
+              price="$19"
+              description="For active creators"
+              features={[
+                "Unlimited projects",
+                "Up to 500 shots per project",
+                "Advanced AI generation",
+                "Priority support",
+                "Multiple export formats",
+                "Team collaboration (3 members)",
+                "Custom presets"
+              ]}
+              featured={true}
+            />
+            <PricingCard
+              tier="Studio"
+              price="$99"
+              description="For production teams"
+              features={[
+                "Everything in Creator",
+                "Unlimited shots & projects",
+                "Advanced batch generation",
+                "24/7 dedicated support",
+                "Team collaboration (unlimited)",
+                "Admin dashboard",
+                "Custom integrations",
+                "API access"
+              ]}
+            />
+          </div>
+        </section>
+
+        {/* CTA Section */}
+        <section className="max-w-7xl mx-auto px-5 py-20">
+          <div className="bg-[#032940] rounded-3xl p-12 lg:p-16 text-center">
+            <h2 className="font-heading font-black text-4xl lg:text-5xl text-white mb-6">Ready to Transform Your Workflow?</h2>
+            <p className="text-[#E0E0E0] font-semibold text-lg mb-8 max-w-2xl mx-auto leading-relaxed">
+              Join thousands of creators and production teams using StoryAI to bring their stories to life faster than ever before.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
                 to="/login"
-                className="px-5 py-3 rounded-2xl text-sm font-black text-white bg-[#F27D16] hover:bg-[#d86b10] transition-colors inline-flex items-center justify-center gap-2 shadow-md shadow-[#F27D16]/20"
+                className="px-8 py-4 rounded-2xl text-base font-black text-[#032940] bg-[#F27D16] hover:bg-white transition-colors inline-flex items-center justify-center gap-2 shadow-lg"
               >
-                Start creating <ArrowRight size={16} />
+                Get Started Free <ArrowRight size={18} />
               </Link>
               <a
-                href="#how"
-                className="px-5 py-3 rounded-2xl text-sm font-black text-[#032940] bg-white border border-[#E0E0E0] hover:border-[#032940] transition-colors inline-flex items-center justify-center"
+                href="#pricing"
+                className="px-8 py-4 rounded-2xl text-base font-black text-[#F27D16] border-2 border-[#F27D16] hover:bg-[#F27D16]/10 transition-colors inline-flex items-center justify-center"
               >
-                How it works
+                View Pricing
               </a>
             </div>
           </div>
-
-          <div className="bg-white border border-[#E0E0E0] rounded-3xl p-6 shadow-sm">
-            <div className="font-heading font-black text-[#032940] text-lg">Studio preview</div>
-            <div className="mt-4 grid grid-cols-2 gap-3">
-              <div className="aspect-video rounded-2xl bg-[#F0F0F0] border border-[#E0E0E0]" />
-              <div className="aspect-video rounded-2xl bg-[#F0F0F0] border border-[#E0E0E0]" />
-              <div className="aspect-video rounded-2xl bg-[#F0F0F0] border border-[#E0E0E0]" />
-              <div className="aspect-video rounded-2xl bg-[#F0F0F0] border border-[#E0E0E0]" />
-            </div>
-            <div className="mt-4 text-xs text-[#555555] font-semibold leading-relaxed">
-              Parse a script into shots, then generate frames and keep the best “take” per shot.
-            </div>
-          </div>
         </section>
 
-        <section id="how" className="mt-14 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-          <Feature icon={Wand2} title="Script → Shots">
-            Auto-parse scripts into storyboard-ready shots with captions and prompts.
-          </Feature>
-          <Feature icon={Film} title="Cinema controls">
-            Shot size, lens, angle, lighting presets, notes, and per-shot takes.
-          </Feature>
-          <Feature icon={Sparkles} title="AI image generation">
-            Generate frames per shot, batch-generate selections, and retry failed jobs.
-          </Feature>
-          <Feature icon={ShieldCheck} title="Studio + admin ready">
-            Creator profiles, project management, and an admin surface for oversight.
-          </Feature>
-        </section>
-
-        <section className="mt-14 bg-gradient-to-br from-white to-[#F0F0F0] border border-[#E0E0E0] rounded-3xl p-10">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+        {/* Footer */}
+        <footer className="max-w-7xl mx-auto px-5 py-12 border-t border-[#E0E0E0] mt-20">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
             <div>
-              <div className="font-heading font-black text-2xl text-[#032940]">
-                Ready to build your storyboard?
+              <div className="flex items-center gap-2 mb-4">
+                <StoryAILogo className="w-8 h-8" />
+                <div className="font-heading font-black text-lg text-[#032940]">StoryAI</div>
               </div>
-              <div className="text-[#555555] font-semibold mt-2">
-                Sign in or create an account to start a new project.
-              </div>
+              <p className="text-sm text-[#666666] font-semibold">AI-powered storyboard creation for creators and studios.</p>
             </div>
-            <Link
-              to="/login"
-              className="px-6 py-3 rounded-2xl text-sm font-black text-white bg-[#032940] hover:bg-[#021B2B] transition-colors inline-flex items-center justify-center gap-2"
-            >
-              Open Studio <ArrowRight size={16} />
-            </Link>
+            <div>
+              <h4 className="font-heading font-black text-[#032940] mb-3">Product</h4>
+              <ul className="space-y-2">
+                <li><a href="#features" className="text-sm text-[#666666] font-semibold hover:text-[#F27D16]">Features</a></li>
+                <li><a href="#pricing" className="text-sm text-[#666666] font-semibold hover:text-[#F27D16]">Pricing</a></li>
+                <li><a href="#how" className="text-sm text-[#666666] font-semibold hover:text-[#F27D16]">How It Works</a></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-heading font-black text-[#032940] mb-3">Company</h4>
+              <ul className="space-y-2">
+                <li><a href="#" className="text-sm text-[#666666] font-semibold hover:text-[#F27D16]">About</a></li>
+                <li><a href="#" className="text-sm text-[#666666] font-semibold hover:text-[#F27D16]">Blog</a></li>
+                <li><a href="#" className="text-sm text-[#666666] font-semibold hover:text-[#F27D16]">Contact</a></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-heading font-black text-[#032940] mb-3">Legal</h4>
+              <ul className="space-y-2">
+                <li><a href="#" className="text-sm text-[#666666] font-semibold hover:text-[#F27D16]">Privacy</a></li>
+                <li><a href="#" className="text-sm text-[#666666] font-semibold hover:text-[#F27D16]">Terms</a></li>
+              </ul>
+            </div>
           </div>
-        </section>
+          <div className="border-t border-[#E0E0E0] pt-8 text-center">
+            <p className="text-sm text-[#999999] font-semibold">&copy; 2024 StoryAI. All rights reserved.</p>
+          </div>
+        </footer>
       </main>
     </div>
   );
 }
-
