@@ -4,7 +4,7 @@ import { auth } from './firebase';
 
 const AuthContext = createContext(null);
 
-export function AuthProvider({ children }) {
+function AuthProviderImpl({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -26,4 +26,6 @@ export function useAuth() {
   if (!ctx) throw new Error('useAuth must be used within AuthProvider');
   return ctx;
 }
+
+export const AuthProvider = AuthProviderImpl;
 
