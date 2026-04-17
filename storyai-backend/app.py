@@ -33,6 +33,21 @@ def _get_hf_models() -> tuple[str, str]:
     image_model = os.environ.get("HF_IMAGE_MODEL", "black-forest-labs/FLUX.1-schnell").strip().strip('"').strip("'")
     return text_model, image_model
 
+def _get_text_model_candidates() -> list[str]:
+    primary_text_model, _ = _get_hf_models()
+    # Keep this list small and stable; first item is user-configured model.
+    fallback_models = [
+        "google/flan-t5-large",
+        "MiniMaxAI/MiniMax-M2.7",
+    ]
+
+    # Deduplicate while preserving order.
+    candidates: list[str] = []
+    for model in [primary_text_model, *fallback_models]:
+        if model and model not in candidates:
+            candidates.append(model)
+    return candidates
+
 def _get_client() -> InferenceClient:
     # Use provider auto-routing for maximum compatibility
     # Falls back to basic initialization if provider parameter not supported
@@ -107,6 +122,7 @@ def parse_script():
 
     try:
         text_model, _ = _get_hf_models()
+        text_candidates = _get_text_model_candidates()
         client = _get_client()
 
         prompt = f"""Analyze the following screenplay and extract visual information for storyboarding.
@@ -122,12 +138,26 @@ Return ONLY valid JSON (no other text):
 Limit to 3-6 scenes. Output ONLY JSON."""
 
         # Use text_generation instead of chat completions (more reliable on free tier)
-        generated_text = client.text_generation(
-            prompt=prompt,
-            model=text_model,
-            max_new_tokens=2000,
-            temperature=0.3,
-        )
+        generated_text = None
+        last_error = None
+        model_used = text_model
+        for candidate_model in text_candidates:
+            try:
+                generated_text = client.text_generation(
+                    prompt=prompt,
+                    model=candidate_model,
+                    max_new_tokens=2000,
+                    temperature=0.3,
+                )
+                model_used = candidate_model
+                break
+            except Exception as model_err:
+                last_error = model_err
+                print(f"Text model failed ({candidate_model}): {model_err}", flush=True)
+                continue
+
+        if generated_text is None:
+            raise RuntimeError(f"All text model attempts failed: {last_error}")
         
         # Extract the text (might be a string or object depending on client version)
         if isinstance(generated_text, dict):
@@ -143,7 +173,7 @@ Limit to 3-6 scenes. Output ONLY JSON."""
             
         result_data = json.loads(clean_text)
 
-        return jsonify({"status": "success", "data": result_data}), 200
+        return jsonify({"status": "success", "model": model_used, "data": result_data}), 200
 
     except Exception as e:
         print("Error parsing script:", e, flush=True)
@@ -152,7 +182,7 @@ Limit to 3-6 scenes. Output ONLY JSON."""
             "error": "Hugging Face Text API Error",
             "model": text_model,
             "details": str(e),
-            "hint": "Try a different model or check Hugging Face API status"
+            "hint": "Set HF_TEXT_MODEL to a supported model, e.g. google/flan-t5-large"
         }), 502
 
 # --- Image Generation Endpoint ---
