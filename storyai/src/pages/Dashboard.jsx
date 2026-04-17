@@ -15,7 +15,7 @@ import { db } from '../lib/firebase';
 import { useAuth } from '../lib/auth';
 import { APP_ID, migrateProject } from '../lib/projectModel';
 
-function ActionButton({ onClick, icon: Icon, label, variant = 'ghost' }) {
+function ActionButton({ onClick, icon: IconComponent, label, variant = 'ghost' }) {
   const styles =
     variant === 'danger'
       ? 'text-[#730E20] hover:bg-[#730E20]/10'
@@ -28,7 +28,7 @@ function ActionButton({ onClick, icon: Icon, label, variant = 'ghost' }) {
       className={`px-3 py-2 rounded-xl text-sm font-black transition-colors flex items-center gap-2 ${styles}`}
       type="button"
     >
-      <Icon size={16} /> {label}
+      <IconComponent size={16} /> {label}
     </button>
   );
 }
@@ -181,7 +181,8 @@ export function DashboardPage() {
                     {p.name || 'Untitled Story'}
                   </div>
                   <div className="text-xs text-[#555555] font-semibold mt-1">
-                    Last edited: {new Date(p.updatedAt || Date.now()).toLocaleString()}
+                    Last edited:{' '}
+                    {p.updatedAt ? new Date(p.updatedAt).toLocaleString() : '—'}
                   </div>
                 </div>
                 <button

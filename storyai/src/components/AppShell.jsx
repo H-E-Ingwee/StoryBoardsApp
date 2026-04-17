@@ -6,7 +6,7 @@ import { auth } from '../lib/firebase';
 import { useAuth } from '../lib/auth';
 import { StoryAILogo } from './StoryAILogo';
 
-function NavItem({ to, icon: Icon, children }) {
+function NavItem({ to, icon: IconComponent, children }) {
   return (
     <NavLink
       to={to}
@@ -19,7 +19,7 @@ function NavItem({ to, icon: Icon, children }) {
       }
       end
     >
-      <Icon size={18} />
+      <IconComponent size={18} />
       <span>{children}</span>
     </NavLink>
   );

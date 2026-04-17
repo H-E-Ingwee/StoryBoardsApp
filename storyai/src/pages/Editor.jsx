@@ -279,7 +279,6 @@ export function EditorPage() {
     }
     for (const id of selectedIds) {
       // sequential to avoid throttling and to keep UI responsive
-      // eslint-disable-next-line no-await-in-loop
       await generateImageForPanel(id);
     }
   };

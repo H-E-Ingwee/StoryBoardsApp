@@ -2,12 +2,12 @@ import React from 'react';
 import { Shield, Users, Activity, SlidersHorizontal } from 'lucide-react';
 import { useAuth } from '../lib/auth';
 
-function Card({ icon: Icon, title, children }) {
+function Card({ icon: IconComponent, title, children }) {
   return (
     <div className="bg-white border border-[#E0E0E0] rounded-2xl p-6 shadow-sm">
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-2xl bg-[#032940]/10 text-[#032940] flex items-center justify-center">
-          <Icon size={18} />
+          <IconComponent size={18} />
         </div>
         <div className="font-heading font-black text-lg text-[#032940]">{title}</div>
       </div>
