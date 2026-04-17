@@ -5,7 +5,7 @@ import { StoryAILogo } from '../components/StoryAILogo';
 
 function FeatureCard({ icon, title, description }) {
   return (
-    <div className="bg-white border border-[#E0E0E0] rounded-3xl p-8 shadow-sm hover:shadow-lg hover:border-[#F27D16] transition-all duration-300 group">
+    <div className="bg-white border border-[#E0E0E0] rounded-3xl p-8 shadow-sm hover:shadow-2xl hover:border-[#F27D16] hover:-translate-y-1 transition-all duration-300 group">
       <div className="w-14 h-14 rounded-2xl bg-[#F27D16]/10 text-[#F27D16] flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
         {React.createElement(icon, { size: 24 })}
       </div>
@@ -47,7 +47,7 @@ function PricingCard({ tier, price, description, features, featured = false }) {
       </ul>
       <Link
         to="/login"
-        className={`py-3 rounded-2xl font-black text-sm uppercase tracking-wider transition-colors text-center ${
+        className={`py-3 rounded-2xl font-black text-sm uppercase tracking-wider transition-all duration-200 text-center hover:shadow-lg hover:scale-105 ${
           featured
             ? 'bg-[#F27D16] text-[#032940] hover:bg-white'
             : 'bg-[#032940] text-white hover:bg-[#F27D16] hover:text-[#032940]'
@@ -72,7 +72,7 @@ export function LandingPage() {
   return (
     <div className="min-h-screen bg-white text-[#333333] font-body">
       {/* Header */}
-      <header className={`fixed top-0 w-full z-50 transition-all duration-300 ${scrolled ? 'bg-white shadow-lg border-b border-[#E0E0E0]' : 'bg-white border-b border-[#E0E0E0]'}`}>
+      <header className={`fixed top-0 w-full z-50 transition-all duration-300 backdrop-blur-sm ${scrolled ? 'bg-white/95 shadow-xl border-b border-[#E0E0E0]/50' : 'bg-white/90 border-b border-[#E0E0E0]/30'}`}>
         <div className="max-w-7xl mx-auto px-5 h-20 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <StoryAILogo className="w-12 h-12" />
@@ -89,9 +89,9 @@ export function LandingPage() {
           {/* Desktop Navigation */}
           <div className="hidden lg:flex items-center gap-8">
             <nav className="flex gap-8 text-sm font-bold text-[#666666]">       
-              <a href="#features" className="hover:text-[#F27D16] transition-colors">Features</a>
-              <a href="#how" className="hover:text-[#F27D16] transition-colors">How It Works</a>
-              <a href="#pricing" className="hover:text-[#F27D16] transition-colors">Pricing</a>
+              <a href="#features" className="hover:text-[#F27D16] transition-colors relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-[#F27D16] after:transition-all after:duration-300 hover:after:w-full">Features</a>
+              <a href="#how" className="hover:text-[#F27D16] transition-colors relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-[#F27D16] after:transition-all after:duration-300 hover:after:w-full">How It Works</a>
+              <a href="#pricing" className="hover:text-[#F27D16] transition-colors relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-[#F27D16] after:transition-all after:duration-300 hover:after:w-full">Pricing</a>
             </nav>
             <div className="flex items-center gap-3 border-l border-[#E0E0E0] pl-8">
               <Link
@@ -102,7 +102,7 @@ export function LandingPage() {
               </Link>
               <Link
                 to="/login"
-                className="px-4 py-2 rounded-xl text-sm font-black text-white bg-[#032940] hover:bg-[#F27D16] hover:text-[#032940] transition-colors flex items-center gap-2"
+                className="px-4 py-2 rounded-xl text-sm font-black text-white bg-[#032940] hover:bg-[#F27D16] hover:text-[#032940] hover:shadow-lg hover:scale-105 transition-all duration-200 flex items-center gap-2"
               >
                 Get started <ArrowRight size={16} />
               </Link>
@@ -110,14 +110,14 @@ export function LandingPage() {
           </div>
 
           {/* Mobile Menu Button */}
-          <button className="lg:hidden p-2" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+          <button className="lg:hidden p-2 rounded-lg hover:bg-[#F0F0F0] transition-colors" onClick={() => setIsMenuOpen(!isMenuOpen)}>
             {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
         </div>
 
         {/* Mobile Navigation */}
         {isMenuOpen && (
-          <div className="lg:hidden bg-white border-t border-[#E0E0E0] p-5">    
+          <div className="lg:hidden bg-white border-t border-[#E0E0E0] p-5 animate-in fade-in slide-in-from-top-2 duration-200">    
             <nav className="flex flex-col gap-4 mb-4">
               <a href="#features" className="text-sm font-bold text-[#666666] hover:text-[#F27D16]">Features</a>
               <a href="#how" className="text-sm font-bold text-[#666666] hover:text-[#F27D16]">How It Works</a>
@@ -133,7 +133,7 @@ export function LandingPage() {
 
       <main className="pt-20">
         {/* Hero Section */}
-        <section className="max-w-7xl mx-auto px-5 py-20">
+        <section className="max-w-7xl mx-auto px-5 py-24 lg:py-32">
           <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_0.8fr] gap-10 items-center">
             <div>
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-[#E0E0E0] text-xs font-black text-[#032940] tracking-widest uppercase">
@@ -149,20 +149,20 @@ export function LandingPage() {
               <div className="mt-8 flex flex-col sm:flex-row gap-4">
                 <Link
                   to="/login"
-                  className="px-6 py-4 rounded-2xl text-base font-black text-white bg-[#F27D16] hover:bg-[#d86b10] transition-colors inline-flex items-center justify-center gap-2 shadow-lg shadow-[#F27D16]/30"
+                  className="px-6 py-4 rounded-2xl text-base font-black text-white bg-[#F27D16] hover:bg-[#d86b10] hover:shadow-xl hover:scale-105 transition-all duration-200 inline-flex items-center justify-center gap-2 shadow-lg shadow-[#F27D16]/30"
                 >
                   Start Creating <ArrowRight size={18} />
                 </Link>
                 <a
                   href="#how"
-                  className="px-6 py-4 rounded-2xl text-base font-black text-[#032940] bg-white border-2 border-[#E0E0E0] hover:border-[#F27D16] transition-colors inline-flex items-center justify-center"
+                  className="px-6 py-4 rounded-2xl text-base font-black text-[#032940] bg-white border-2 border-[#E0E0E0] hover:border-[#F27D16] hover:shadow-lg hover:bg-[#F0F0F0] transition-all duration-200 inline-flex items-center justify-center"
                 >
                   See How It Works
                 </a>
               </div>
             </div>
 
-            <div className="bg-gradient-to-br from-[#F27D16]/5 to-[#032940]/5 border border-[#E0E0E0] rounded-3xl p-8 shadow-lg">
+            <div className="bg-gradient-to-br from-[#F27D16]/8 to-[#032940]/8 border border-[#E0E0E0] rounded-3xl p-8 shadow-lg hover:shadow-2xl hover:border-[#F27D16]/50 transition-all duration-300">
               <div className="font-heading font-black text-[#032940] text-xl mb-6">Studio Preview</div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="aspect-video rounded-2xl bg-[#F0F0F0] border border-[#E0E0E0] flex items-center justify-center">
@@ -186,7 +186,7 @@ export function LandingPage() {
         </section>
 
         {/* Features Section */}
-        <section id="features" className="max-w-7xl mx-auto px-5 py-20">
+        <section id="features" className="max-w-7xl mx-auto px-5 py-24 lg:py-32">
           <div className="text-center mb-16">
             <h2 className="font-heading font-black text-4xl text-[#032940] mb-4">Powerful Features for Creators</h2>
             <p className="text-[#666666] font-semibold text-lg max-w-2xl mx-auto">Everything you need to create professional storyboards with AI assistance</p>
@@ -216,7 +216,7 @@ export function LandingPage() {
         </section>
 
         {/* How It Works Section */}
-        <section id="how" className="max-w-7xl mx-auto px-5 py-20 bg-[#F9F9F9] -mx-5 px-[calc(1.25rem)] lg:-mx-0 lg:px-5 rounded-none lg:rounded-3xl">
+        <section id="how" className="max-w-7xl mx-auto px-5 py-24 lg:py-32 bg-gradient-to-b from-[#F9F9F9] to-white -mx-5 px-[calc(1.25rem)] lg:-mx-0 lg:px-5 rounded-none lg:rounded-3xl">
           <div className="text-center mb-16">
             <h2 className="font-heading font-black text-4xl text-[#032940] mb-4">How It Works</h2>
             <p className="text-[#666666] font-semibold text-lg max-w-2xl mx-auto">Three simple steps to create your first storyboard</p>
@@ -253,7 +253,7 @@ export function LandingPage() {
         </section>
 
         {/* Pricing Section */}
-        <section id="pricing" className="max-w-7xl mx-auto px-5 py-20">
+        <section id="pricing" className="max-w-7xl mx-auto px-5 py-24 lg:py-32">
           <div className="text-center mb-16">
             <h2 className="font-heading font-black text-4xl text-[#032940] mb-4">Simple, Transparent Pricing</h2>
             <p className="text-[#666666] font-semibold text-lg max-w-2xl mx-auto">Choose the perfect plan for your creative needs</p>
@@ -305,8 +305,8 @@ export function LandingPage() {
         </section>
 
         {/* CTA Section */}
-        <section className="max-w-7xl mx-auto px-5 py-20">
-          <div className="bg-[#032940] rounded-3xl p-12 lg:p-16 text-center">
+        <section className="max-w-7xl mx-auto px-5 py-24 lg:py-32">
+          <div className="bg-gradient-to-r from-[#032940] to-[#054563] rounded-3xl p-12 lg:p-16 text-center shadow-xl hover:shadow-2xl transition-all duration-300">
             <h2 className="font-heading font-black text-4xl lg:text-5xl text-white mb-6">Ready to Transform Your Workflow?</h2>
             <p className="text-[#E0E0E0] font-semibold text-lg mb-8 max-w-2xl mx-auto leading-relaxed">
               Join thousands of creators and production teams using StoryAI to bring their stories to life faster than ever before.
@@ -314,13 +314,13 @@ export function LandingPage() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
                 to="/login"
-                className="px-8 py-4 rounded-2xl text-base font-black text-[#032940] bg-[#F27D16] hover:bg-white transition-colors inline-flex items-center justify-center gap-2 shadow-lg"
+                className="px-8 py-4 rounded-2xl text-base font-black text-[#032940] bg-[#F27D16] hover:bg-white hover:shadow-xl hover:scale-105 transition-all duration-200 inline-flex items-center justify-center gap-2 shadow-lg"
               >
                 Get Started Free <ArrowRight size={18} />
               </Link>
               <a
                 href="#pricing"
-                className="px-8 py-4 rounded-2xl text-base font-black text-[#F27D16] border-2 border-[#F27D16] hover:bg-[#F27D16]/10 transition-colors inline-flex items-center justify-center"
+                className="px-8 py-4 rounded-2xl text-base font-black text-[#F27D16] border-2 border-[#F27D16] hover:bg-[#F27D16] hover:text-[#032940] hover:shadow-xl hover:scale-105 transition-all duration-200 inline-flex items-center justify-center"
               >
                 View Pricing
               </a>
@@ -329,7 +329,7 @@ export function LandingPage() {
         </section>
 
         {/* Footer */}
-        <footer className="max-w-7xl mx-auto px-5 py-12 border-t border-[#E0E0E0] mt-20">
+        <footer className="max-w-7xl mx-auto px-5 py-16 border-t border-[#E0E0E0]/50 mt-20 bg-gradient-to-b from-white to-[#F9F9F9]">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
             <div>
               <div className="flex items-center gap-2 mb-4">

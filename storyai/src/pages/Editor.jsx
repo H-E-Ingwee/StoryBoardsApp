@@ -59,6 +59,19 @@ export function EditorPage() {
   const [isParsing, setIsParsing] = useState(false);
   const [activePanelId, setActivePanelId] = useState(null);
   const saveTimer = useRef(null);
+  const latestProjectRef = useRef(null);
+  const hasLocalChangesRef = useRef(false);
+  const hasLoadedInitialSnapshotRef = useRef(false);
+
+  useEffect(() => {
+    latestProjectRef.current = project;
+  }, [project]);
+
+  useEffect(() => {
+    return () => {
+      if (saveTimer.current) clearTimeout(saveTimer.current);
+    };
+  }, []);
 
   useEffect(() => {
     if (!user || !projectId) return;
@@ -71,6 +84,9 @@ export function EditorPage() {
           return;
         }
         const data = migrateProject({ id: snap.id, ...snap.data() });
+        // Prevent realtime snapshots from clobbering local edits while user is typing.
+        if (hasLoadedInitialSnapshotRef.current && hasLocalChangesRef.current) return;
+        hasLoadedInitialSnapshotRef.current = true;
         setProject(data);
       },
       (e) => {
@@ -91,16 +107,19 @@ export function EditorPage() {
 
   const scheduleAutoSave = () => {
     if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(() => saveProject(), 600);
+    saveTimer.current = setTimeout(() => {
+      void saveProject(latestProjectRef.current);
+    }, 700);
   };
 
-  const saveProject = async () => {
-    if (!user || !project) return;
+  const saveProject = async (projectToSave = latestProjectRef.current) => {
+    if (!user || !projectToSave) return;
     setIsSaving(true);
     setError('');
     try {
-      const ref = doc(db, 'artifacts', APP_ID, 'users', user.uid, 'projects', project.id);
-      await setDoc(ref, { ...project, updatedAt: Date.now() });
+      const ref = doc(db, 'artifacts', APP_ID, 'users', user.uid, 'projects', projectToSave.id);
+      await setDoc(ref, { ...projectToSave, updatedAt: Date.now() });
+      hasLocalChangesRef.current = false;
     } catch (e) {
       console.error(e);
       setError('Failed to save project.');
@@ -110,6 +129,7 @@ export function EditorPage() {
   };
 
   const updateProject = (patch) => {
+    hasLocalChangesRef.current = true;
     setProject((prev) => {
       const next = { ...prev, ...patch };
       return next;
@@ -118,6 +138,7 @@ export function EditorPage() {
   };
 
   const updatePanel = (id, patch) => {
+    hasLocalChangesRef.current = true;
     setProject((prev) => {
       const nextPanels = (prev.panels || []).map((p) => (p.id === id ? { ...p, ...patch } : p));
       return { ...prev, panels: nextPanels };
@@ -126,6 +147,7 @@ export function EditorPage() {
   };
 
   const addManualPanel = () => {
+    hasLocalChangesRef.current = true;
     const newPanel = {
       id: crypto.randomUUID(),
       caption: 'New Shot',
@@ -148,12 +170,14 @@ export function EditorPage() {
 
   const removePanel = (id) => {
     if (!confirm('Delete this shot?')) return;
+    hasLocalChangesRef.current = true;
     setProject((prev) => ({ ...prev, panels: prev.panels.filter((p) => p.id !== id) }));
     if (activePanelId === id) setActivePanelId(null);
     scheduleAutoSave();
   };
 
   const movePanel = (index, direction) => {
+    hasLocalChangesRef.current = true;
     setProject((prev) => {
       const arr = [...prev.panels];
       if (direction === 'up' && index > 0) {
@@ -214,6 +238,7 @@ export function EditorPage() {
         characterRef: nextCharacterRef,
         panels: [...prev.panels, ...newPanels],
       }));
+      hasLocalChangesRef.current = true;
       scheduleAutoSave();
     } catch (e) {
       console.error(e);
@@ -226,13 +251,14 @@ export function EditorPage() {
   const generateImageForPanel = async (panelId) => {
     setError('');
     updatePanel(panelId, { isGenerating: true });
-    const panelToGen = (project.panels || []).find((p) => p.id === panelId);
+    const currentProject = latestProjectRef.current;
+    const panelToGen = (currentProject?.panels || []).find((p) => p.id === panelId);
     if (!panelToGen) return;
     try {
       const fullPrompt = buildFullPrompt({
         basePrompt: panelToGen.prompt,
         styleSuffix: style.suffix,
-        characterRef: project.characterRef,
+        characterRef: currentProject?.characterRef || '',
         shotMeta: panelToGen,
       });
 
@@ -437,7 +463,7 @@ export function EditorPage() {
 
   return (
     <div className="bg-white border border-[#E0E0E0] rounded-2xl shadow-sm overflow-hidden">
-      <header className="h-16 px-4 flex items-center justify-between border-b border-[#E0E0E0] bg-white">
+      <header className="min-h-16 px-4 py-3 flex flex-col xl:flex-row xl:items-center justify-between gap-3 border-b border-[#E0E0E0] bg-white">
         <div className="flex items-center gap-4 min-w-0">
           <button
             onClick={() => navigate('/app')}
@@ -493,7 +519,7 @@ export function EditorPage() {
         </div>
       </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[420px_1fr_380px] min-h-[calc(100vh-64px-48px)]">
+      <div className="grid grid-cols-1 xl:grid-cols-[340px_minmax(560px,1fr)_320px] 2xl:grid-cols-[390px_minmax(680px,1fr)_360px] min-h-[calc(100vh-64px-48px)]">
         {/* Left: Script + global direction */}
         <aside className="border-r border-[#E0E0E0] bg-white p-6 flex flex-col gap-6">
           <div>
@@ -589,7 +615,7 @@ export function EditorPage() {
         </aside>
 
         {/* Center: Shot board */}
-        <section className="bg-[#F0F0F0] p-6 overflow-y-auto">
+        <section className="bg-[#F0F0F0] p-6 overflow-y-auto min-w-0">
           <div className="flex items-center justify-between gap-3 mb-5">
             <div className="flex items-center gap-2">
               <button
@@ -643,7 +669,7 @@ export function EditorPage() {
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-6">
               {panels.map((panel, index) => {
                 const selectedTake = panel.takes?.find((t) => t.id === panel.selectedTakeId);
                 const displayImage = selectedTake?.imageUrl || panel.imageUrl;

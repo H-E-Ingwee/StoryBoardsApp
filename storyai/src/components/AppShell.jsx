@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { signOut } from 'firebase/auth';
 import { LogOut, LayoutDashboard, User, Shield } from 'lucide-react';
 import { auth } from '../lib/firebase';
@@ -27,7 +27,9 @@ function NavItem({ to, icon, children }) {
 
 export function AppShell() {
   const { user } = useAuth();
+  const location = useLocation();
   const navigate = useNavigate();
+  const isStudioRoute = location.pathname.includes('/app/projects/');
 
   const adminEmails = (import.meta.env.VITE_ADMIN_EMAILS || '')
     .split(',')
@@ -43,7 +45,7 @@ export function AppShell() {
   return (
     <div className="min-h-screen bg-[#F0F0F0] text-[#333333] font-body">
       <header className="h-16 bg-white border-b border-[#E0E0E0] sticky top-0 z-20">
-        <div className="max-w-7xl mx-auto px-5 h-full flex items-center justify-between">
+        <div className={`${isStudioRoute ? 'max-w-none' : 'max-w-7xl mx-auto'} px-5 h-full flex items-center justify-between`}>
           <Link to="/app" className="flex items-center gap-3">
             <StoryAILogo className="w-10 h-10" />
             <div className="leading-tight">
@@ -80,37 +82,45 @@ export function AppShell() {
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-5 py-6 grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-6">
-        <aside className="bg-white border border-[#E0E0E0] rounded-2xl p-3 h-fit sticky top-24">
-          <nav className="flex flex-col gap-1">
-            <NavItem to="/app" icon={LayoutDashboard}>
-              Dashboard
-            </NavItem>
-            <NavItem to="/app/profile" icon={User}>
-              Profile
-            </NavItem>
-            {isAdmin && (
-              <NavItem to="/app/admin" icon={Shield}>
-                Admin
+      {isStudioRoute ? (
+        <div className="max-w-none px-3 py-3">
+          <main className="min-w-0">
+            <Outlet />
+          </main>
+        </div>
+      ) : (
+        <div className="max-w-7xl mx-auto px-5 py-6 grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-6">
+          <aside className="bg-white border border-[#E0E0E0] rounded-2xl p-3 h-fit sticky top-24">
+            <nav className="flex flex-col gap-1">
+              <NavItem to="/app" icon={LayoutDashboard}>
+                Dashboard
               </NavItem>
-            )}
-          </nav>
+              <NavItem to="/app/profile" icon={User}>
+                Profile
+              </NavItem>
+              {isAdmin && (
+                <NavItem to="/app/admin" icon={Shield}>
+                  Admin
+                </NavItem>
+              )}
+            </nav>
 
-          <div className="mt-4 p-3 rounded-xl bg-[#032940]/5 border border-[#032940]/10">
-            <div className="text-xs font-black tracking-widest uppercase text-[#032940]">
-              Studio tips
+            <div className="mt-4 p-3 rounded-xl bg-[#032940]/5 border border-[#032940]/10">
+              <div className="text-xs font-black tracking-widest uppercase text-[#032940]">
+                Studio tips
+              </div>
+              <div className="text-xs text-[#555555] mt-2 leading-relaxed font-semibold">
+                Parse a script into shots, then batch-generate frames and refine the best “takes” per
+                shot.
+              </div>
             </div>
-            <div className="text-xs text-[#555555] mt-2 leading-relaxed font-semibold">
-              Parse a script into shots, then batch-generate frames and refine the best “takes” per
-              shot.
-            </div>
-          </div>
-        </aside>
+          </aside>
 
-        <main className="min-w-0">
-          <Outlet />
-        </main>
-      </div>
+          <main className="min-w-0">
+            <Outlet />
+          </main>
+        </div>
+      )}
     </div>
   );
 }
