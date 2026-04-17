@@ -11,12 +11,12 @@ import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signO
 import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyAK_GFgN4iTCPB-iQgUh_m-8VgFUTgD2P4",
-  authDomain: "storyai-bb7fd.firebaseapp.com",
-  projectId: "storyai-bb7fd",
-  storageBucket: "storyai-bb7fd.firebasestorage.app",
-  messagingSenderId: "22964525010",
-  appId: "1:22964525010:web:05874281fa3462f0ca1a0b"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
 const app = initializeApp(firebaseConfig);
@@ -25,7 +25,7 @@ const googleProvider = new GoogleAuthProvider();
 const db = getFirestore(app);
 
 // --- API Configuration & Utilities ---
-const apiKey = "AQ.Ab8RN6Jp9pVwRWxfFP-ZLgyYWTL3mpzt4ZqAUWRyoJ74AfIr6w";
+const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
 const appId = "storyai-local";
 
 const fetchWithBackoff = async (url, options, retries = 5) => {
@@ -336,35 +336,22 @@ function Editor({ user, project, onClose }) {
     setError("");
     
     try {
-      const textPayload = {
-        contents: [{ parts: [{ text: `Analyze the following script and break it down into 3 to 6 logical storyboard scenes/shots. Focus on visual composition. Script: ${script}` }] }],
-        systemInstruction: { parts: [{ text: "You are a storyboard director. Break the narrative into discrete visual shots. Return ONLY a JSON array." }] },
-        generationConfig: {
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: "ARRAY",
-            items: {
-              type: "OBJECT",
-              properties: {
-                caption: { type: "STRING", description: "Short caption (1-2 sentences) describing the action." },
-                imagePrompt: { type: "STRING", description: "Detailed visual prompt for the AI image generator." }
-              },
-              required: ["caption", "imagePrompt"]
-            }
-          }
-        }
-      };
+      // --- NEW: Calling our local Python Flask Backend! ---
+      const response = await fetch("http://127.0.0.1:5000/api/parse-script", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ script: script })
+      });
 
-      // VITAL FIX: Ensures the endpoint uses v1beta which is required for structured JSON response schemas
-      const textResponse = await fetchWithBackoff(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
-        { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(textPayload) }
-      );
+      if (!response.ok) {
+        const errData = await response.json();
+        throw new Error(errData.error || "Failed to parse script on backend.");
+      }
 
-      const responseText = textResponse.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (!responseText) throw new Error("Failed to parse script.");
+      const data = await response.json();
+      const scenes = data.data?.scenes || [];
+      const characters = data.data?.characters || [];
       
-      const scenes = JSON.parse(responseText);
       const newPanels = scenes.map((s) => ({
         id: crypto.randomUUID(),
         caption: s.caption,
@@ -373,12 +360,18 @@ function Editor({ user, project, onClose }) {
         isGenerating: false
       }));
 
+      // Auto-populate the Consistency Reference with the extracted characters!
+      if (characters.length > 0) {
+        const charRefs = characters.map(c => `${c.name}: ${c.visual_description}`).join('\n');
+        setCharacterRef(prev => prev ? prev + '\n\n' + charRefs : charRefs);
+      }
+
       setPanels([...panels, ...newPanels]);
       setTimeout(saveProject, 500);
 
     } catch (err) {
       console.error(err);
-      setError("Failed to auto-parse the script.");
+      setError(err.message || "Failed to auto-parse the script.");
     } finally {
       setIsParsing(false);
     }
@@ -397,19 +390,21 @@ function Editor({ user, project, onClose }) {
         fullPrompt += `. CRITICAL CONSISTENCY DETAILS: ${characterRef}`;
       }
 
-      const imagePayload = {
-        instances: { prompt: fullPrompt },
-        parameters: { sampleCount: 1 }
-      };
+      // Generate via our local backend (Hugging Face image model)
+      const response = await fetch("http://127.0.0.1:5000/api/generate-image", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: fullPrompt })
+      });
 
-      // VITAL FIX: Ensures the endpoint uses v1beta for imagen models
-      const imageResponse = await fetchWithBackoff(
-        `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-001:predict?key=${apiKey}`,
-        { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(imagePayload) }
-      );
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error || errData.details || "Image generation failed on backend.");
+      }
 
-      const base64Image = imageResponse.predictions?.[0]?.bytesBase64Encoded;
-      if (!base64Image) throw new Error(`Image generation failed.`);
+      const data = await response.json();
+      const base64Image = data.image_base64;
+      if (!base64Image) throw new Error("Image generation failed (missing image data).");
 
       setPanels(prev => prev.map(p => 
         p.id === panelId 
@@ -421,7 +416,7 @@ function Editor({ user, project, onClose }) {
 
     } catch (err) {
       console.error(err);
-      setError("Image generation failed. Please try again.");
+      setError(err.message || "Image generation failed. Please try again.");
       setPanels(prev => prev.map(p => p.id === panelId ? { ...p, isGenerating: false } : p));
     }
   };
