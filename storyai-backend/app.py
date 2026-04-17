@@ -36,14 +36,19 @@ allowed_origins = [
     "http://localhost:3000",
     "http://localhost:5173",
     "http://localhost:5000",
-    "https://storyai-app.vercel.app",  # Production frontend
-    "https://*.vercel.app",  # Any Vercel deployment
+    "https://storyai-app.vercel.app",  # Old production frontend
+    "https://nuru-storyai.vercel.app",  # Current production frontend
 ]
 
-# Add custom origin from environment variable if provided
-env_origin = os.getenv('FRONTEND_URL', '')
-if env_origin:
-    allowed_origins.append(env_origin)
+# Add custom origins from environment variables if provided
+frontend_url = os.getenv('FRONTEND_URL', '')
+if frontend_url:
+    allowed_origins.append(frontend_url)
+
+# Also support comma-separated list of URLs
+extra_urls = os.getenv('EXTRA_CORS_ORIGINS', '')
+if extra_urls:
+    allowed_origins.extend([url.strip() for url in extra_urls.split(',')])
 
 CORS(app, 
      resources={r"/api/*": {
