@@ -3,11 +3,11 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, Sparkles, Wand2, Film, ShieldCheck } from 'lucide-react';
 import { StoryAILogo } from '../components/StoryAILogo';
 
-function Feature({ icon: IconComponent, title, children }) {
+function Feature({ icon, title, children }) {
   return (
     <div className="bg-white border border-[#E0E0E0] rounded-2xl p-6 shadow-sm">
       <div className="w-12 h-12 rounded-2xl bg-[#F27D16]/10 text-[#F27D16] flex items-center justify-center mb-4">
-        <IconComponent size={22} />
+        {React.createElement(icon, { size: 22 })}
       </div>
       <div className="font-heading font-black text-lg text-[#032940] mb-2">{title}</div>
       <div className="text-sm text-[#555555] font-semibold leading-relaxed">{children}</div>

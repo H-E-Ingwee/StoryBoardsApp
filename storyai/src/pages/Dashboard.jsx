@@ -9,13 +9,14 @@ import {
   PencilLine,
   Copy,
   Archive,
+  Inbox,
 } from 'lucide-react';
 import { collection, deleteDoc, doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { useAuth } from '../lib/auth';
 import { APP_ID, migrateProject } from '../lib/projectModel';
 
-function ActionButton({ onClick, icon: IconComponent, label, variant = 'ghost' }) {
+function ActionButton({ onClick, icon, label, variant = 'ghost' }) {
   const styles =
     variant === 'danger'
       ? 'text-[#730E20] hover:bg-[#730E20]/10'
@@ -28,7 +29,7 @@ function ActionButton({ onClick, icon: IconComponent, label, variant = 'ghost' }
       className={`px-3 py-2 rounded-xl text-sm font-black transition-colors flex items-center gap-2 ${styles}`}
       type="button"
     >
-      <IconComponent size={16} /> {label}
+      {React.createElement(icon, { size: 16 })} {label}
     </button>
   );
 }
@@ -40,6 +41,7 @@ export function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [query, setQuery] = useState('');
+  const [view, setView] = useState('active'); // active | archived
 
   useEffect(() => {
     if (!user) return;
@@ -64,9 +66,10 @@ export function DashboardPage() {
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return projects;
-    return projects.filter((p) => (p.name || '').toLowerCase().includes(q));
-  }, [projects, query]);
+    const base = projects.filter((p) => (!!p.archived ? 'archived' : 'active') === view);
+    if (!q) return base;
+    return base.filter((p) => (p.name || '').toLowerCase().includes(q));
+  }, [projects, query, view]);
 
   const createNewProject = async () => {
     if (!user) return;
@@ -93,9 +96,17 @@ export function DashboardPage() {
       id: crypto.randomUUID(),
       name: `${p.name || 'Untitled'} (Copy)`,
       updatedAt: Date.now(),
+      archived: false,
     });
     const projRef = doc(db, 'artifacts', APP_ID, 'users', user.uid, 'projects', copy.id);
     await setDoc(projRef, copy);
+  };
+
+  const setArchived = async (p, archived) => {
+    if (!user) return;
+    const next = migrateProject({ ...p, archived, updatedAt: Date.now() });
+    const projRef = doc(db, 'artifacts', APP_ID, 'users', user.uid, 'projects', p.id);
+    await setDoc(projRef, next);
   };
 
   const deleteProject = async (id, e) => {
@@ -117,7 +128,7 @@ export function DashboardPage() {
         <div>
           <div className="font-heading font-black text-3xl text-[#032940]">Dashboard</div>
           <div className="text-[#555555] font-semibold mt-1">
-            Manage projects, open the studio, and export storyboards.
+            A clean home for projects, versions, exports, and your studio workflow.
           </div>
         </div>
         <button
@@ -129,14 +140,39 @@ export function DashboardPage() {
         </button>
       </div>
 
-      <div className="mt-6 bg-white border border-[#E0E0E0] rounded-2xl p-4 shadow-sm flex items-center gap-3">
-        <Search size={18} className="text-[#555555]" />
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search projects…"
-          className="w-full outline-none text-sm font-semibold text-[#032940]"
-        />
+      <div className="mt-6 bg-white border border-[#E0E0E0] rounded-2xl p-4 shadow-sm">
+        <div className="flex flex-col md:flex-row md:items-center gap-3">
+          <div className="flex items-center gap-2 bg-[#F0F0F0] border border-[#E0E0E0] rounded-2xl p-1 w-fit">
+            <button
+              onClick={() => setView('active')}
+              className={`px-4 py-2 rounded-xl text-sm font-black transition-colors ${
+                view === 'active' ? 'bg-white text-[#032940] shadow-sm' : 'text-[#555555] hover:text-[#032940]'
+              }`}
+              type="button"
+            >
+              Active
+            </button>
+            <button
+              onClick={() => setView('archived')}
+              className={`px-4 py-2 rounded-xl text-sm font-black transition-colors ${
+                view === 'archived' ? 'bg-white text-[#032940] shadow-sm' : 'text-[#555555] hover:text-[#032940]'
+              }`}
+              type="button"
+            >
+              Archived
+            </button>
+          </div>
+
+          <div className="flex-1 flex items-center gap-3 bg-[#F0F0F0] border border-[#E0E0E0] rounded-2xl px-4 py-3">
+            <Search size={18} className="text-[#555555]" />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={`Search ${view} projects…`}
+              className="w-full outline-none text-sm font-semibold text-[#032940] bg-transparent"
+            />
+          </div>
+        </div>
       </div>
 
       {error && (
@@ -151,17 +187,23 @@ export function DashboardPage() {
         </div>
       ) : filtered.length === 0 ? (
         <div className="mt-10 text-center p-16 bg-white rounded-2xl border-2 border-[#E0E0E0] border-dashed shadow-sm">
-          <FolderOpen className="w-16 h-16 text-[#CCCCCC] mx-auto mb-4" />
+          {view === 'archived' ? (
+            <Inbox className="w-16 h-16 text-[#CCCCCC] mx-auto mb-4" />
+          ) : (
+            <FolderOpen className="w-16 h-16 text-[#CCCCCC] mx-auto mb-4" />
+          )}
           <p className="text-[#555555] font-semibold mb-6 text-lg">
-            No projects yet. Start by creating a new one!
+            {view === 'archived' ? 'No archived projects.' : 'No projects yet. Start by creating a new one!'}
           </p>
-          <button
-            onClick={createNewProject}
-            className="text-[#F27D16] font-black text-lg hover:underline decoration-2 underline-offset-4"
-            type="button"
-          >
-            Create your first storyboard →
-          </button>
+          {view === 'active' && (
+            <button
+              onClick={createNewProject}
+              className="text-[#F27D16] font-black text-lg hover:underline decoration-2 underline-offset-4"
+              type="button"
+            >
+              Create your first storyboard →
+            </button>
+          )}
         </div>
       ) : (
         <div className="mt-6 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -202,6 +244,19 @@ export function DashboardPage() {
                 <span className="text-xs bg-[#F0F0F0] text-[#555555] px-3 py-1.5 rounded-xl font-semibold border border-[#E0E0E0]">
                   Studio-ready
                 </span>
+                {(p.tags || []).slice(0, 2).map((t) => (
+                  <span
+                    key={t}
+                    className="text-xs bg-[#F27D16]/10 text-[#F27D16] px-3 py-1.5 rounded-xl font-black border border-[#F27D16]/20"
+                  >
+                    {t}
+                  </span>
+                ))}
+                {(p.tags || []).length > 2 && (
+                  <span className="text-xs bg-[#F0F0F0] text-[#555555] px-3 py-1.5 rounded-xl font-semibold border border-[#E0E0E0]">
+                    +{(p.tags || []).length - 2}
+                  </span>
+                )}
               </div>
 
               <div className="mt-auto pt-5 border-t border-[#F0F0F0] flex flex-wrap gap-2">
@@ -225,18 +280,20 @@ export function DashboardPage() {
                 <ActionButton
                   onClick={(e) => {
                     e.stopPropagation();
-                    alert('Archive is coming next. (We can implement archive flags + filters.)');
+                    setArchived(p, !p.archived);
                   }}
                   icon={Archive}
-                  label="Archive"
+                  label={p.archived ? 'Unarchive' : 'Archive'}
                 />
                 <ActionButton
                   onClick={(e) => {
                     e.stopPropagation();
-                    alert('Export is coming next. (PDF / ZIP / CSV pipeline.)');
+                    navigator.clipboard
+                      .writeText(`${location.origin}/app/projects/${p.id}`)
+                      .then(() => alert('Project link copied.'));
                   }}
                   icon={Sparkles}
-                  label="Export"
+                  label="Copy link"
                 />
               </div>
             </div>

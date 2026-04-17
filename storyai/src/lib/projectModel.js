@@ -26,6 +26,8 @@ export function migrateProject(project) {
     script: project?.script ?? '',
     styleId: project?.styleId ?? 'cinematic',
     characterRef: project?.characterRef ?? '',
+    tags: Array.isArray(project?.tags) ? project.tags : [],
+    archived: !!project?.archived,
     panels: migratedPanels,
     updatedAt: project?.updatedAt ?? Date.now(),
   };
