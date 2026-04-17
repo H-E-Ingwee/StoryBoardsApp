@@ -66,7 +66,7 @@ export function DashboardPage() {
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    const base = projects.filter((p) => (!!p.archived ? 'archived' : 'active') === view);
+    const base = projects.filter((p) => ((p.archived ? 'archived' : 'active') === view));
     if (!q) return base;
     return base.filter((p) => (p.name || '').toLowerCase().includes(q));
   }, [projects, query, view]);

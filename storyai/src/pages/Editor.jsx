@@ -16,12 +16,15 @@ import {
   Trash2,
   Wand2,
   XSquare,
+  FileSpreadsheet,
+  Package,
 } from 'lucide-react';
 import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { useAuth } from '../lib/auth';
 import { APP_ID, migrateProject } from '../lib/projectModel';
 import { StoryAILogo } from '../components/StoryAILogo';
+import JSZip from 'jszip';
 
 const ART_STYLES = [
   { id: 'cinematic', label: 'Cinematic Movie', suffix: 'cinematic shot, 35mm lens, 8k resolution, highly detailed, dramatic lighting, movie still' },
@@ -283,6 +286,147 @@ export function EditorPage() {
     }
   };
 
+  const exportShotCSV = () => {
+    const rows = [
+      [
+        'shot_number',
+        'caption',
+        'prompt',
+        'shot_size',
+        'camera_angle',
+        'lens',
+        'time_of_day',
+        'notes',
+        'selected_take',
+      ],
+      ...(project.panels || []).map((p, idx) => {
+        const take = (p.takes || []).find((t) => t.id === p.selectedTakeId) || null;
+        return [
+          String(idx + 1),
+          (p.caption || '').replaceAll('\n', ' '),
+          (p.prompt || '').replaceAll('\n', ' '),
+          p.shotSize || '',
+          p.cameraAngle || '',
+          p.lens || '',
+          p.timeOfDay || '',
+          (p.notes || '').replaceAll('\n', ' '),
+          take ? 'yes' : 'no',
+        ];
+      }),
+    ];
+
+    const csv = rows
+      .map((r) =>
+        r
+          .map((cell) => {
+            const s = String(cell ?? '');
+            const escaped = s.replaceAll('"', '""');
+            return `"${escaped}"`;
+          })
+          .join(','),
+      )
+      .join('\n');
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `${(project.name || 'storyai').replaceAll(' ', '_')}_shots.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(a.href);
+  };
+
+  const exportZIP = async () => {
+    setError('');
+    try {
+      const zip = new JSZip();
+
+      const meta = {
+        projectId: project.id,
+        name: project.name,
+        styleId: project.styleId,
+        tags: project.tags || [],
+        exportedAt: new Date().toISOString(),
+        shotCount: (project.panels || []).length,
+      };
+      zip.file('metadata.json', JSON.stringify(meta, null, 2));
+
+      // Reuse CSV export logic for a clean index file.
+      const csvRows = [
+        [
+          'shot_number',
+          'caption',
+          'prompt',
+          'shot_size',
+          'camera_angle',
+          'lens',
+          'time_of_day',
+          'notes',
+          'image_file',
+        ],
+      ];
+
+      const imagesFolder = zip.folder('images');
+
+      for (let i = 0; i < (project.panels || []).length; i++) {
+        const p = project.panels[i];
+        const shotNum = String(i + 1).padStart(3, '0');
+        const take = (p.takes || []).find((t) => t.id === p.selectedTakeId) || null;
+        const dataUrl = take?.imageUrl || null;
+        let fileName = '';
+
+        if (dataUrl && dataUrl.startsWith('data:image/')) {
+          const match = dataUrl.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,(.*)$/);
+          if (match) {
+            const mime = match[1];
+            const b64 = match[2];
+            const ext = mime.includes('png') ? 'png' : 'jpg';
+            fileName = `shot_${shotNum}.${ext}`;
+            imagesFolder.file(fileName, b64, { base64: true });
+          }
+        }
+
+        csvRows.push([
+          String(i + 1),
+          (p.caption || '').replaceAll('\n', ' '),
+          (p.prompt || '').replaceAll('\n', ' '),
+          p.shotSize || '',
+          p.cameraAngle || '',
+          p.lens || '',
+          p.timeOfDay || '',
+          (p.notes || '').replaceAll('\n', ' '),
+          fileName,
+        ]);
+      }
+
+      const csv = csvRows
+        .map((r) =>
+          r
+            .map((cell) => {
+              const s = String(cell ?? '');
+              const escaped = s.replaceAll('"', '""');
+              return `"${escaped}"`;
+            })
+            .join(','),
+        )
+        .join('\n');
+      zip.file('shots.csv', csv);
+
+      const blob = await zip.generateAsync({ type: 'blob' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `${(project.name || 'storyai').replaceAll(' ', '_')}_export.zip`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(a.href);
+    } catch (e) {
+      console.error(e);
+      setError(e.message || 'Failed to export ZIP.');
+    }
+  };
+
   if (!project) {
     return (
       <div className="bg-white border border-[#E0E0E0] rounded-2xl p-8 shadow-sm">
@@ -321,6 +465,22 @@ export function EditorPage() {
             type="button"
           >
             <Save size={16} /> Save
+          </button>
+          <button
+            onClick={exportShotCSV}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-black text-[#032940] bg-white border border-[#E0E0E0] hover:border-[#032940] rounded-xl transition-colors"
+            type="button"
+            title="Export shot metadata CSV"
+          >
+            <FileSpreadsheet size={16} /> CSV
+          </button>
+          <button
+            onClick={exportZIP}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-black text-[#032940] bg-white border border-[#E0E0E0] hover:border-[#032940] rounded-xl transition-colors"
+            type="button"
+            title="Export ZIP (images + CSV + metadata)"
+          >
+            <Package size={16} /> ZIP
           </button>
           <button
             onClick={() => window.print()}
@@ -385,6 +545,36 @@ export function EditorPage() {
             />
             <div className="text-xs text-[#730E20] font-semibold mt-2 bg-[#730E20]/5 p-3 rounded-xl border border-[#730E20]/10">
               This reference is appended to every generation to keep characters consistent.
+            </div>
+
+            <div className="mt-6">
+              <label className="block text-xs font-black text-[#555555] uppercase tracking-widest mb-2">
+                Project tags
+              </label>
+              <input
+                value={(project.tags || []).join(', ')}
+                onChange={(e) =>
+                  updateProject({
+                    tags: e.target.value
+                      .split(',')
+                      .map((s) => s.trim())
+                      .filter(Boolean)
+                      .slice(0, 12),
+                  })
+                }
+                className="w-full p-3 rounded-2xl bg-[#F0F0F0] border border-[#E0E0E0] outline-none focus:ring-2 focus:ring-[#032940] text-sm font-semibold text-[#032940]"
+                placeholder="e.g. pilot, draft-2, noir, client-review"
+              />
+              <div className="mt-2 flex flex-wrap gap-2">
+                {(project.tags || []).map((t) => (
+                  <span
+                    key={t}
+                    className="text-xs bg-[#F27D16]/10 text-[#F27D16] px-3 py-1.5 rounded-xl font-black border border-[#F27D16]/20"
+                  >
+                    {t}
+                  </span>
+                ))}
+              </div>
             </div>
           </div>
 
